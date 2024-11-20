@@ -2,6 +2,7 @@
  * Global variables
  */
 var message = "Please click on `open app` below first and then `Self-report`";
+var backTovalencePopup = false;
 var disablebBackButton = false;
 var gb_config;
 var sensorStartTime;
@@ -127,8 +128,8 @@ function toastDone() {
   ];
   $("#done-message").html(
     '<div class="ui-popup-toast-icon ui-popup-toast-check-icon"></div>' +
-      messages[Math.round(Math.random() * 10) % messages.length] +
-      "!"
+    messages[Math.round(Math.random() * 10) % messages.length] +
+    "!"
   );
   tau.openPopup($("#done-popup-toast"));
 }
@@ -152,17 +153,45 @@ $.when(readOne("gb_config", ["settings"])).done(function (data) {
 /*
  * Event listeners
  */
+
+var valencePopup = document.getElementById("valence-popup");
+var arousalPopup = document.getElementById("arousal-popup");
+var stressPopup = document.getElementById("stress-popup");
+var conveniencePopup = document.getElementById("convenience-popup");
+
 var preparingPopup = document.getElementById("preparing-popup");
 var doneToast = document.getElementById("done-popup-toast");
 var infoToast = document.getElementById("info-popup-toast");
+
 doneToast.addEventListener("popupbeforeshow", function () {
   console.log("`popupbeforeshow` fired");
   // stop sensors
   sensorForceStop = true;
 });
+
 doneToast.addEventListener("popuphide", function () {
   console.log("`popuphide` fired");
   tizen.application.getCurrentApplication().hide();
+});
+
+
+valencePopup.addEventListener("popupbeforeshow", function () {
+  valenceSlider.value(valence == -1 ? "5" : String(valence));
+  console.log("`popupbeforeshow` fired");
+});
+valencePopup.addEventListener("popupshow", function () {
+  console.log("`popupshow` fired");
+  disablebBackButton = false;
+  add(
+    {
+      eventKey: Number($("#process-id").val()),
+      eventType: "ntf",
+      eventOccuredAt: new Date().getTime(),
+      eventData: { action: "READ" },
+    },
+    ["activity"]
+  );
+  $(".ui-popup-wrapper").scrollTop(0);
 });
 
 preparingPopup.addEventListener("popupbeforeshow", function () {
@@ -174,8 +203,43 @@ preparingPopup.addEventListener("popupbeforeshow", function () {
   startSensors();
 });
 
+arousalPopup.addEventListener("popupbeforeshow", function () {
+  arousalSlider.value(arousal == -1 ? "5" : String(arousal));
+  console.log("`popupbeforeshow` fired");
+  backTovalencePopup = true;
+});
+arousalPopup.addEventListener("popupshow", function () {
+  console.log("`popupshow` fired");
+  $(".ui-popup-wrapper").scrollTop(0);
+});
+stressPopup.addEventListener("popupbeforeshow", function () {
+  stressSlider.value(stress == -1 ? "5" : String(stress));
+  console.log("`popupbeforeshow` fired");
+  backTovalencePopup = true;
+});
+stressPopup.addEventListener("popupshow", function () {
+  console.log("`popupshow` fired");
+  $(".ui-popup-wrapper").scrollTop(0);
+});
+conveniencePopup.addEventListener("popupbeforeshow", function () {
+  convenienceSlider.value(convenience == -1 ? "5" : String(convenience));
+  console.log("`popupbeforeshow` fired");
+  backTovalencePopup = true;
+});
+conveniencePopup.addEventListener("popupshow", function () {
+  console.log("`popupshow` fired");
+  $(".ui-popup-wrapper").scrollTop(0);
+});
+
+
+
 $(document).on("popupEvent", { type: "UI" }, function (event, data) {
   $("#process-id").val(data);
+  tau.openPopup(preparingPopup);
+  setTimeout(() => {
+    tau.closePopup(preparingPopup);
+    tau.openPopup(valencePopup);
+  }, 3000);
   prepareUI(); // new addition to create dynamic questionnaire
   /*
    * ML check
@@ -232,6 +296,29 @@ $(document).on("feedbackEvent", { type: "UI" }, function (event, data) {
       eventType: "fdbk",
       eventOccuredAt: new Date().getTime(),
       eventData: data,
+    },
+    ["activity"]
+  );
+});
+$(document).on("snoozeEvent", { type: "UI" }, function (event, data) {
+  console.log("`snoozeEvent` for " + $("#process-id").val() + " fired");
+  // to later send to notification endpoint
+  add(
+    {
+      eventKey: Number($("#process-id").val()),
+      eventType: "snz",
+      eventOccuredAt: new Date().getTime(),
+      eventData: {},
+    },
+    ["activity"]
+  );
+  // to later send as an activity
+  add(
+    {
+      eventKey: Number($("#process-id").val()),
+      eventType: "ntf",
+      eventOccuredAt: new Date().getTime(),
+      eventData: { action: "SNOOZED" },
     },
     ["activity"]
   );
@@ -445,7 +532,7 @@ function refreshToken() {
         tau.openPopup($("#generic-error-popup-toast"));
       }
     },
-    complete: function () {},
+    complete: function () { },
   };
   $.ajax(settings);
 }
@@ -506,7 +593,7 @@ function login() {
         tau.openPopup($("#generic-error-popup-toast"));
       }
     },
-    complete: function () {},
+    complete: function () { },
   };
 
   $.ajax(settings);
@@ -533,10 +620,10 @@ function checkAlarm() {
         var alarm = tizen.alarm.get(Number(data));
         console.log(
           "The alarm " +
-            alarm.id +
-            " triggers " +
-            alarm.getRemainingSeconds() +
-            " seconds later"
+          alarm.id +
+          " triggers " +
+          alarm.getRemainingSeconds() +
+          " seconds later"
         );
         if (gb_config.policy.method.toUpperCase() == "ML") {
           tizen.application.getCurrentApplication().hide();
@@ -641,11 +728,6 @@ function getConfig() {
           }
         });
         $("#error-popup-cancel").click(function () {
-          // remove("token", ["settings"], function () {
-          //   remove("gb_config", ["settings"], function () {
-          //     tizen.application.getCurrentApplication().exit();
-          //   });
-          // });
         });
       },
     });
@@ -724,10 +806,10 @@ function makeAlarm() {
   );
   console.log(
     "The alarm " +
-      alarm.id +
-      " triggers " +
-      alarm.getRemainingSeconds() +
-      " seconds later"
+    alarm.id +
+    " triggers " +
+    alarm.getRemainingSeconds() +
+    " seconds later"
   );
   alarm_id = alarm.id;
   alarm_insert = update(
@@ -833,7 +915,7 @@ function notify(data, removePrev = true) {
 function requestPermission(
   capacity,
   privilege,
-  callback = function dummy() {}
+  callback = function dummy() { }
 ) {
   console.log("requestPermission()");
   if (tizen.systeminfo.getCapability(capacity)) {
@@ -869,9 +951,9 @@ function onChangedGPS(info) {
   for (var i = 0; i < info.gpsInfo.length; i++) {
     console.log(
       "Coordinates: " +
-        info.gpsInfo[i].latitude +
-        ", " +
-        info.gpsInfo[i].longitude
+      info.gpsInfo[i].latitude +
+      ", " +
+      info.gpsInfo[i].longitude
     );
     console.log(prev_lats);
     console.log(prev_longs);
@@ -913,7 +995,7 @@ function onChangedGPS(info) {
             }
             if (
               new Date().getTime() - notifTimeGeo >
-                geofencingElement.cooldown ||
+              geofencingElement.cooldown ||
               firstGpsRun
             ) {
               notify({
@@ -1115,7 +1197,7 @@ function onchangedPedometer(pedometerInfo) {
                         // and too long has passed without any notifications
                         checkTime >=
                         (gb_config.policy.cooldown / config.LESS) *
-                          config.ML_THRESHOLD
+                        config.ML_THRESHOLD
                       ) {
                         notify({
                           id: id,
@@ -1400,7 +1482,7 @@ function assessLastNotification() {
   });
   return defer.promise();
 }
-function retrainSaveTensor(data_key, label, callback = function dummy() {}) {
+function retrainSaveTensor(data_key, label, callback = function dummy() { }) {
   loadModelIDB("personal-model").then((model) => {
     // compile the model
     model.compile({
@@ -1436,9 +1518,9 @@ function retrainSaveTensor(data_key, label, callback = function dummy() {}) {
       localStorage.getItem("LOG") == null
         ? localStorage.setItem("LOG", aggrLog)
         : localStorage.setItem(
-            "LOG",
-            localStorage.getItem("LOG") + "," + aggrLog
-          );
+          "LOG",
+          localStorage.getItem("LOG") + "," + aggrLog
+        );
       oldLog.apply(console, arguments);
     };
     // sync logs periodically
@@ -1447,12 +1529,12 @@ function retrainSaveTensor(data_key, label, callback = function dummy() {}) {
       fd.append(
         "activity",
         '{"gameDescriptor":1081,"dataProvider":11,"date":' +
-          new Date().getTime() +
-          ',"propertyInstances":[{"property":1229,"value":"' +
-          (localStorage.getItem("LOG") == null
-            ? "[]"
-            : encodeURIComponent("[" + localStorage.getItem("LOG")) + "]") +
-          '"}],"players":[]}'
+        new Date().getTime() +
+        ',"propertyInstances":[{"property":1229,"value":"' +
+        (localStorage.getItem("LOG") == null
+          ? "[]"
+          : encodeURIComponent("[" + localStorage.getItem("LOG")) + "]") +
+        '"}],"players":[]}'
       );
       $.when(readOne("token", ["settings"])).done(function (token) {
         var call = {
@@ -1499,15 +1581,15 @@ function retrainSaveTensor(data_key, label, callback = function dummy() {}) {
       activePopup = document.querySelector(".ui-popup-active");
       page = document.getElementsByClassName("ui-page-active")[0];
       pageId = page ? page.id : "";
-      // if (backToemotionPopUp) {
-      //   // tau.openPopup(emotionPopup);
-      //   backToemotionPopUp = false;
+      // if (backTovalencePopup) {
+      //   // tau.openPopup(valencePopup);
+      //   backTovalencePopup = false;
       // }
       if (pageId === "main" && !activePopup) {
         try {
           //hide rather than exiting app
           tizen.application.getCurrentApplication().hide();
-        } catch (ignore) {}
+        } catch (ignore) { }
       } else {
         window.history.back();
       }
