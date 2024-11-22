@@ -983,9 +983,9 @@ function onChangedGPS(info) {
   for (var i = 0; i < info.gpsInfo.length; i++) {
     console.log(
       "Coordinates: " +
-      info.gpsInfo[i].latitude +
-      ", " +
-      info.gpsInfo[i].longitude
+        info.gpsInfo[i].latitude +
+        ", " +
+        info.gpsInfo[i].longitude
     );
     console.log(prev_lats);
     console.log(prev_longs);
@@ -1002,6 +1002,8 @@ function onChangedGPS(info) {
     }
     var assignedArm = getAssignedArm();
     console.log("Assigned Arm:", assignedArm);
+
+    // Add the 'ARM' property to the gb_activity event
     add(
       {
         eventKey: new Date().getTime(),
@@ -1045,6 +1047,35 @@ function onChangedGPS(info) {
       },
       ["activity"]
     );
+
+    // Check if current time is within start_time and end_time
+    var currentTime = new Date();
+    var currentSeconds =
+      currentTime.getHours() * 3600 +
+      currentTime.getMinutes() * 60 +
+      currentTime.getSeconds();
+
+    var startTimeStr = gb_config.policy.start_time; // e.g., "06:59:59"
+    var endTimeStr = gb_config.policy.end_time;     // e.g., "21:59:59"
+
+    var startTimeParts = startTimeStr.split(":");
+    var endTimeParts = endTimeStr.split(":");
+
+    var startSeconds =
+      parseInt(startTimeParts[0], 10) * 3600 +
+      parseInt(startTimeParts[1], 10) * 60 +
+      parseInt(startTimeParts[2], 10);
+
+    var endSeconds =
+      parseInt(endTimeParts[0], 10) * 3600 +
+      parseInt(endTimeParts[1], 10) * 60 +
+      parseInt(endTimeParts[2], 10);
+
+    // Check if current time is within the time window
+    if (currentSeconds < startSeconds || currentSeconds > endSeconds) {
+      console.log("Current time is outside of notification time window.");
+      continue; // Skip sending notifications
+    }
 
     if (assignedArm === 'Arm 1') {
       // Location-based arm logic
@@ -1090,7 +1121,7 @@ function onChangedGPS(info) {
                 }
                 if (
                   new Date().getTime() - notifTimeGeo >
-                  geofencingElement.cooldown ||
+                    geofencingElement.cooldown ||
                   firstGpsRun
                 ) {
                   notify({
@@ -1131,7 +1162,7 @@ function onChangedGPS(info) {
       // Random arm logic with first_run handling
       var policyCooldown = gb_config.policy.cooldown || 6000000; // Default to 100 minutes if not specified
       var lastNotifTimeKey = 'LAST_RANDOM_NOTIF_TIME';
-      var currentTime = new Date().getTime();
+      var currentTimeMillis = new Date().getTime();
       $.when(
         readOne(lastNotifTimeKey, ["settings"])
       ).done(function (data) {
@@ -1140,12 +1171,12 @@ function onChangedGPS(info) {
         if (data == null) {
           firstRun = true;
           lastNotifTime = 0; // Set to 0 to ensure checkTime is large
-          update({ key: lastNotifTimeKey, value: currentTime }, ["settings"]);
+          update({ key: lastNotifTimeKey, value: currentTimeMillis }, ["settings"]);
         } else {
           firstRun = false;
           lastNotifTime = parseInt(data);
         }
-        var checkTime = currentTime - lastNotifTime;
+        var checkTime = currentTimeMillis - lastNotifTime;
         console.log("first run:", firstRun);
         if (
           checkTime >= policyCooldown ||
@@ -1166,22 +1197,22 @@ function onChangedGPS(info) {
 
             // Send the notification
             notify({
-              id: currentTime,
+              id: currentTimeMillis,
               type: "random",
               content: message,
             });
             update(
               {
                 key: lastNotifTimeKey,
-                value: currentTime,
+                value: currentTimeMillis,
               },
               ["settings"]
             );
             add(
               {
-                eventKey: currentTime,
+                eventKey: currentTimeMillis,
                 eventType: "ntf",
-                eventOccuredAt: currentTime,
+                eventOccuredAt: currentTimeMillis,
                 eventData: { action: "RECEIVED-RANDOM" },
               },
               ["activity"]
@@ -1197,6 +1228,7 @@ function onChangedGPS(info) {
     }
   }
 }
+
 
 
 function onErrorGPS(error) {
