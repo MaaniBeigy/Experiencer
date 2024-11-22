@@ -1,0 +1,202 @@
+[
+    {
+        "geofence_type": "GreenSpace",
+        "nudges": [
+            {
+                "nudge_type": "WARNING",
+                "messages": [
+                    "Skipping a walk today means missing out on a mood and health boost!",
+                    "Inactivity increases heart disease risk. A 15-minute walk reduces that risk!",
+                    "Skipping outdoor exercise can lead to stress. Everyone deserves a break!",
+                    "Too much time indoors hurts your sleep. A walk today helps you rest better!"
+                ]
+            },
+            {
+                "nudge_type": "FRICTION",
+                "messages": [
+                    "A 10-minute stroll is easy. Why not take a quick walk for a break?",
+                    "A short walk today can reduce stress and anxiety. Get moving!",
+                    "Take a 5-minute walk—it’s a manageable way to start your break.",
+                    "A short walk boosts energy. Just head to the first bench and try it!"
+                ]
+            },
+            {
+                "nudge_type": "COMMITMENT",
+                "messages": [
+                    "Commit to walking today! Start with a walk and clear your mind.",
+                    "Commit to walking daily to lower blood pressure and improve health!",
+                    "Commit to a 10-minute walk today. You deserve a health boost!",
+                    "Commit to a 10-minute walk today and feel the benefits to your well-being!"
+                ]
+            },
+            {
+                "nudge_type": "SOCIAL",
+                "messages": [
+                    "Over 50% of people walk for 15 minutes in green spaces. Join them!",
+                    "Regular park walkers are 30% less likely to experience depression. Join them!",
+                    "Over 100 people walked here today. Take a step toward better well-being!",
+                    "Thousands walk here for better health. See the benefits they’re experiencing!"
+                ]
+            },
+            {
+                "nudge_type": "DISCLOSURE",
+                "messages": [
+                    "Want to feel better? Walking boosts happiness. Your choice today!",
+                    "Sitting long hours increases disease risk. 20-minute walks help reduce it!",
+                    "Everyone deserves a break. A 10-minute walk is available to all.",
+                    "A short walk improves heart health. Feel the difference in this space!"
+                ]
+            }
+        ]
+    },
+    {
+        "geofence_type": "SportArea",
+        "nudges": [
+            {
+                "nudge_type": "WARNING",
+                "messages": [
+                    "Skipping your sports today means missing out on fresh air and that energy boost!",
+                    "Inactivity can increase your risk of stiffness. A quick 20-minute session keeps you flexible!",
+                    "Skipping today could set back your progress. Everyone deserves a chance to stay active!",
+                    "Too much time indoors leads to fatigue. A short workout boosts both mood and energy!"
+                ]
+            },
+            {
+                "nudge_type": "FRICTION",
+                "messages": [
+                    "A quick workout is just steps away. Start with 10 minutes on the field for a great break!",
+                    "A 10-minute stretch helps prevent muscle tightness and boosts recovery.",
+                    "Everyone has different fitness levels. Why not try a 10-minute jog?",
+                    "A 5-minute high-intensity drill will elevate your heart rate and energy!"
+                ]
+            },
+            {
+                "nudge_type": "COMMITMENT",
+                "messages": [
+                    "Ready to commit? Start your sport session and take your first steps for a healthier you!",
+                    "Commit to staying active! A quick workout today helps reduce injury risks.",
+                    "Commit to a 20-minute sport session. Fitness is for every level, and fresh air feels great!",
+                    "A 20-minute workout improves endurance. A simple commitment today gives long-term benefits!"
+                ]
+            },
+            {
+                "nudge_type": "SOCIAL",
+                "messages": [
+                    "Did you know? Over 60% of people here enjoy exercising. Join them!",
+                    "Many are staying active to stay healthy. Join them to lower injury risk!",
+                    "You're not alone! Hundreds are using this space to stay fit. Join the sports community!",
+                    "Join others boosting fitness and mood. Exercise benefits everyone!"
+                ]
+            },
+            {
+                "nudge_type": "DISCLOSURE",
+                "messages": [
+                    "Want to feel great? Exercising reduces stress and boosts your energy. Your choice today!",
+                    "Regular exercise reduces chronic disease risk by up to 50%. Start today in the fresh air!",
+                    "Exercise is for all levels, whether walking, jogging, or stretching outdoors. Start wherever you are!",
+                    "Exercise improves mental clarity and reduces stress. A workout today helps you focus!"
+                ]
+            }
+        ]
+    },
+    {
+        "geofence_type": "FoodStore",
+        "nudges": [
+            {
+                "nudge_type": "WARNING",
+                "messages": [
+                    "Sugary drinks can cause blood sugar spikes. Opt for a refreshing iced tea instead.",
+                    "High-sodium foods can increase blood pressure. Low-sodium canned soups are a healthier choice.",
+                    "Large snack portions lead to overeating. Smaller packages or healthier snacks like yogurt work too.",
+                    "Processed meats can increase health risks. Choose plant-based protein for a healthier option."
+                ]
+            },
+            {
+                "nudge_type": "FRICTION",
+                "messages": [
+                    "The candy aisle is tempting, but take a quick detour to the whole grain section!",
+                    "Packaged foods are convenient, but opting for frozen veggies can reduce preservatives and add nutrients.",
+                    "Everyone deserves healthy meals. Choose smaller pasta portions or whole wheat options for balanced meals.",
+                    "Opt for unsweetened beverages over soda. It’s an easy choice that keeps you energized all day."
+                ]
+            },
+            {
+                "nudge_type": "COMMITMENT",
+                "messages": [
+                    "Commit to buying whole grains today. Your future self will appreciate the extra fiber!",
+                    "Make a commitment:choose heart-healthy olive oil today and reduce the risk of cardiovascular diseases.",
+                    "Everyone can enjoy pizza night. Commit to whole wheat crust and veggie toppings for a healthier twist!",
+                    "Commit to a healthier lunch with whole-wheat bread and lean protein. Your body will thank you."
+                ]
+            },
+            {
+                "nudge_type": "SOCIAL",
+                "messages": [
+                    "Did you know? 60% of shoppers are choosing low-fat dairy today. Why not join them?",
+                    "Many shoppers are swapping sugary drinks for sparkling water. Try it today and feel energized!",
+                    "You’re not alone! Many people are opting for plant-based meals today. Why not try it too?",
+                    "Join the many shoppers selecting frozen fruits today. It’s a cost-effective way to boost smoothies."
+                ]
+            },
+            {
+                "nudge_type": "DISCLOSURE",
+                "messages": [
+                    "Many snacks contain hidden sugars. Check labels to make informed choices about your health.",
+                    "Did you know? Low-fat dairy can support bone health. It’s an easy swap for stronger bones.",
+                    "Healthy snacks are affordable for everyone. Learn how to make better choices with labels and serving sizes.",
+                    "Frozen vegetables retain most of their nutrients. Choose them for convenient, healthy meals at home."
+                ]
+            }
+        ]
+    },
+    {
+        "geofence_type": "FoodPlace",
+        "nudges": [
+            {
+                "nudge_type": "WARNING",
+                "messages": [
+                    "Craving fries? Pair with veggies for a balanced meal—your choice, your body will thank you!",
+                    "High-calorie sauces can sneak up. Choose lighter dressings to keep your meal healthy!",
+                    "Choose a smaller portion for a healthier meal! Enjoy it guilt-free and still full.",
+                    "Sugary drinks can cause energy slumps. Try sparkling water or iced tea instead for balance!"
+                ]
+            },
+            {
+                "nudge_type": "FRICTION",
+                "messages": [
+                    "Swap fries for mixed greens instead. Small change, big impact on your health!",
+                    "Choose fruit juice or infused water over soda—refreshing and fewer calories with more nutrients!",
+                    "Share a dessert instead of ordering a full portion. Treat yourself without overindulging!",
+                    "Fried food may make you sluggish. Grilled options are lighter and leave you feeling energized!"
+                ]
+            },
+            {
+                "nudge_type": "COMMITMENT",
+                "messages": [
+                    "Commit to one plant-based meal today, like a veggie burger or hearty salad.",
+                    "Make a healthy change! Choose veggies instead of fries to support heart health today.",
+                    "Balance your meal with veggies or fruit-based desserts. Everyone deserves a treat and balance!",
+                    "Committing to healthier meals boosts energy. Start with a fresh salad or grilled protein!"
+                ]
+            },
+            {
+                "nudge_type": "SOCIAL",
+                "messages": [
+                    "Join the 60% choosing plant-based meals today for a nourishing and satisfying meal!",
+                    "Most diners opt for lighter salads over fried foods. Feel full without post-meal fatigue!",
+                    "Join others sharing healthy sides like roasted veggies or greens with their meals today!",
+                    "Many diners choose low-sugar drinks for a healthy, refreshing option. Why not join them?"
+                ]
+            },
+            {
+                "nudge_type": "DISCLOSURE",
+                "messages": [
+                    "Did you know? Veggies help you feel fuller longer. Load up on greens today!",
+                    "Processed food can increase inflammation. Opt for whole, unprocessed foods to protect your health!",
+                    "Everyone can enjoy a satisfying meal! Build your own plate with fresh, healthy ingredients.",
+                    "High-fiber meals, like this veggie wrap, help lower cholesterol. Make a heart-healthy choice!"
+                ]
+            }
+        ]
+    }
+]

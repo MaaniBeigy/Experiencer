@@ -26,6 +26,38 @@ var hrm_added = false;
 var ppg_added = false;
 var acc_added = false;
 /*
+ * Assign Intervention Arm Randomly and change the arm after 7 days
+ */
+function getAssignedArm() {
+  var assignedArm = localStorage.getItem('assignedArm');
+  var armAssignedDate = parseInt(localStorage.getItem('armAssignedDate'), 10);
+  var currentTime = new Date().getTime();
+
+  if (!assignedArm || !armAssignedDate) {
+    // No arm assigned yet, assign one randomly
+    var isArm1 = Math.random() < 0.5;
+    assignedArm = isArm1 ? 'Arm 1' : 'Arm 2';
+    armAssignedDate = currentTime;
+    localStorage.setItem('assignedArm', assignedArm);
+    localStorage.setItem('armAssignedDate', armAssignedDate);
+    console.log('Assigned arm:', assignedArm);
+  } else {
+    // Check if 7 days have passed since the arm was assigned
+    var sevenDays = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    if (currentTime - armAssignedDate >= sevenDays) {
+      // Switch to the other arm
+      assignedArm = assignedArm === 'Arm 1' ? 'Arm 2' : 'Arm 1';
+      // Reset the armAssignedDate
+      armAssignedDate = currentTime;
+      localStorage.setItem('assignedArm', assignedArm);
+      localStorage.setItem('armAssignedDate', armAssignedDate);
+      console.log('Switched arm to:', assignedArm);
+    }
+  }
+
+  return assignedArm;
+}
+/*
  * prepare UI
  */
 function prepareUI() {
@@ -968,65 +1000,8 @@ function onChangedGPS(info) {
       prev_lats.push(info.gpsInfo[i].latitude);
       prev_longs.push(info.gpsInfo[i].longitude);
     }
-    if (gb_config.gps.hasOwnProperty("geofencing")) {
-      // geofencing, context-aware prompting
-      gb_config.gps.geofencing.forEach((geofencingElement) => {
-        if (
-          isWithinCircle(
-            geofencingElement.lat,
-            geofencingElement.long,
-            info.gpsInfo[i].latitude,
-            info.gpsInfo[i].longitude,
-            geofencingElement.r
-          )
-        ) {
-          $.when(
-            readOne("GEO" + CryptoJS.MD5(geofencingElement.message), [
-              "settings",
-            ])
-          ).done(function (data) {
-            var notifTimeGeo;
-            var firstGpsRun = false;
-            if (data == null) {
-              notifTimeGeo = new Date().getTime();
-              firstGpsRun = true;
-            } else {
-              notifTimeGeo = parseInt(data);
-            }
-            if (
-              new Date().getTime() - notifTimeGeo >
-              geofencingElement.cooldown ||
-              firstGpsRun
-            ) {
-              notify({
-                id: new Date().getTime(),
-                type: "geofencing",
-                content: geofencingElement.message,
-              });
-              update(
-                {
-                  key: "GEO" + CryptoJS.MD5(geofencingElement.message),
-                  value: new Date().getTime(),
-                },
-                ["settings"]
-              );
-              add(
-                {
-                  eventKey: new Date().getTime(),
-                  eventType: "ntf",
-                  eventOccuredAt: new Date().getTime(),
-                  eventData: { action: "RECEIVED-GEO" },
-                },
-                ["activity"]
-              );
-              console.log("GEO notification sent");
-            }
-          });
-        } else {
-          console.log("outside radius");
-        }
-      });
-    }
+    var assignedArm = getAssignedArm();
+    console.log("Assigned Arm:", assignedArm);
     add(
       {
         eventKey: new Date().getTime(),
@@ -1060,14 +1035,170 @@ function onChangedGPS(info) {
                 propertyTK: gb_config.gps.prp_ts,
                 value: info.gpsInfo[i].timestamp,
               },
+              {
+                propertyTK: gb_config.gps.prp_arm,
+                value: assignedArm, // Include the assigned arm
+              },
             ],
           },
         ],
       },
       ["activity"]
     );
+
+    if (assignedArm === 'Arm 1') {
+      // Location-based arm logic
+      if (gb_config.gps.hasOwnProperty("geofencing")) {
+        // geofencing, context-aware prompting
+        gb_config.gps.geofencing.forEach((geofencingElement) => {
+          if (
+            isWithinCircle(
+              geofencingElement.lat,
+              geofencingElement.long,
+              info.gpsInfo[i].latitude,
+              info.gpsInfo[i].longitude,
+              geofencingElement.r
+            )
+          ) {
+            var geofenceType = geofencingElement.type;
+            // Find the messages for this geofence type
+            var messagesForType = gb_config.gps.messages.find(function (item) {
+              return item.geofence_type === geofenceType;
+            });
+            if (messagesForType) {
+              // Randomly select a nudge_type
+              var nudges = messagesForType.nudges;
+              var randomNudgeIndex = Math.floor(Math.random() * nudges.length);
+              var nudge = nudges[randomNudgeIndex];
+              // Randomly select a message from the selected nudge_type
+              var messages = nudge.messages;
+              var randomMessageIndex = Math.floor(Math.random() * messages.length);
+              var message = messages[randomMessageIndex];
+              // Check cooldown
+              // Use a key based on geofence type and nudge_type
+              var notifKey = 'GEO_' + geofenceType + '_' + nudge.nudge_type;
+              $.when(
+                readOne(notifKey, ["settings"])
+              ).done(function (data) {
+                var notifTimeGeo;
+                var firstGpsRun = false;
+                if (data == null) {
+                  notifTimeGeo = new Date().getTime();
+                  firstGpsRun = true;
+                } else {
+                  notifTimeGeo = parseInt(data);
+                }
+                if (
+                  new Date().getTime() - notifTimeGeo >
+                  geofencingElement.cooldown ||
+                  firstGpsRun
+                ) {
+                  notify({
+                    id: new Date().getTime(),
+                    type: "geofencing",
+                    content: message,
+                  });
+                  update(
+                    {
+                      key: notifKey,
+                      value: new Date().getTime(),
+                    },
+                    ["settings"]
+                  );
+                  add(
+                    {
+                      eventKey: new Date().getTime(),
+                      eventType: "ntf",
+                      eventOccuredAt: new Date().getTime(),
+                      eventData: { action: "RECEIVED-GEO" },
+                    },
+                    ["activity"]
+                  );
+                  console.log("GEO notification sent with message:", message);
+                } else {
+                  console.log("Cooldown not yet passed for key:", notifKey);
+                }
+              });
+            } else {
+              console.log("No messages found for geofence type:", geofenceType);
+            }
+          } else {
+            console.log("outside radius");
+          }
+        });
+      }
+    } else if (assignedArm === 'Arm 2') {
+      // Random arm logic with first_run handling
+      var policyCooldown = gb_config.policy.cooldown || 6000000; // Default to 100 minutes if not specified
+      var lastNotifTimeKey = 'LAST_RANDOM_NOTIF_TIME';
+      var currentTime = new Date().getTime();
+      $.when(
+        readOne(lastNotifTimeKey, ["settings"])
+      ).done(function (data) {
+        var lastNotifTime;
+        var firstRun = false;
+        if (data == null) {
+          firstRun = true;
+          lastNotifTime = 0; // Set to 0 to ensure checkTime is large
+          update({ key: lastNotifTimeKey, value: currentTime }, ["settings"]);
+        } else {
+          firstRun = false;
+          lastNotifTime = parseInt(data);
+        }
+        var checkTime = currentTime - lastNotifTime;
+        console.log("first run:", firstRun);
+        if (
+          checkTime >= policyCooldown ||
+          firstRun
+        ) {
+          // Collect all messages from all geofence types and nudge types
+          var allMessages = [];
+          gb_config.gps.messages.forEach(function (messageType) {
+            messageType.nudges.forEach(function (nudge) {
+              allMessages = allMessages.concat(nudge.messages);
+            });
+          });
+
+          if (allMessages.length > 0) {
+            // Randomly select a message
+            var randomMessageIndex = Math.floor(Math.random() * allMessages.length);
+            var message = allMessages[randomMessageIndex];
+
+            // Send the notification
+            notify({
+              id: currentTime,
+              type: "random",
+              content: message,
+            });
+            update(
+              {
+                key: lastNotifTimeKey,
+                value: currentTime,
+              },
+              ["settings"]
+            );
+            add(
+              {
+                eventKey: currentTime,
+                eventType: "ntf",
+                eventOccuredAt: currentTime,
+                eventData: { action: "RECEIVED-RANDOM" },
+              },
+              ["activity"]
+            );
+            console.log("Random notification sent with message:", message);
+          } else {
+            console.log("No messages available in gps.messages");
+          }
+        } else {
+          console.log("Policy cooldown not yet passed for Random arm notifications");
+        }
+      });
+    }
   }
 }
+
+
 function onErrorGPS(error) {
   console.log("GPS :" + error.name + " " + error.message);
 }
@@ -1097,201 +1228,17 @@ function onchangedPedometer(pedometerInfo) {
     },
     ["activity"]
   );
-  if (
-    (pedometerInfo.stepStatus == "UNKNOWN" &&
-      gb_config.policy.method.toUpperCase() == "UNKNOWN") ||
-    (pedometerInfo.stepStatus != "UNKNOWN" &&
-      gb_config.policy.method.toUpperCase() == "KNOWN") ||
-    gb_config.policy.method.toUpperCase() == "ALL" ||
-    gb_config.policy.method.toUpperCase() == "ML"
-  ) {
-    var first_run;
-    $.when(readOne("NT", ["settings"])).done(function (data) {
-      var notifTime;
-      if (data == null) {
-        first_run = true;
-        // only happens the first time so 0
-        notifTime = new Date().getTime();
-        update({ key: "NT", value: new Date().getTime() }, ["settings"]);
-      } else {
-        first_run = false;
-        notifTime = parseInt(data);
-      }
-      var checkTime = new Date().getTime() - notifTime;
-      console.log("first time:" + first_run);
-      /*
-       * ML check
-       */
-      if (gb_config.policy.method.toUpperCase() == "ML") {
-        // check the time since start
-        $.when(readOne("start_time", ["ml_settings"])).done(function (data) {
-          if (data == null) {
-            start_time = new Date().getTime();
-            update({ key: "start_time", value: start_time }, ["ml_settings"]);
-          } else {
-            start_time = parseInt(data);
-          }
-          $.when(readOne("last_notif_reaction", ["ml_settings"])).done(
-            function (data) {
-              if (data == null) {
-                last_notif_reaction = -1;
-              } else {
-                last_notif_reaction = parseInt(data);
-              }
-              // store/update PA information everytime
-              // create a feature vector suitable for model
-              feature_vector = preprocess_1x16(
-                new Date().getTime() - start_time,
-                checkTime,
-                pedometerInfo.speed,
-                last_notif_reaction,
-                pedometerInfo.stepStatus
-              );
-              // store feature vector needed for retraining
-              update({ key: "last_pa_vector", value: feature_vector }, [
-                "ml_settings",
-              ]);
-              if (
-                checkTime > gb_config.policy.cooldown / config.LESS ||
-                first_run
-              ) {
-                // CODE BELOW ONLY RUNS WHEN A NOTIFICATION SHOULD BE RECEIVED
-                // calculate time since last beep
-                // it is already calculated as `checkTime`
-                // load model
-                loadModelIDB("personal-model").then((idb_model) => {
-                  // model must already be downloaded via getConfig function
-                  // after the first time (above) is ignored, checkTime > gb_config.policy.cooldown is checked again after config.PEDOMETER_INTERVAL
-                  // so the delay to reassess is only config.PEDOMETER_INTERVAL that should be set to 1 minute (60000ms)
-                  $.when(readOne("start_time", ["ml_settings"])).done(function (
-                    start_time
-                  ) {
-                    // create a feature vector suitable for model
-                    feature_vector = preprocess_1x16(
-                      new Date().getTime() - start_time,
-                      checkTime,
-                      pedometerInfo.speed,
-                      last_notif_reaction,
-                      pedometerInfo.stepStatus
-                    );
-                    // store feature vector needed for retraining
-                    update(
-                      { key: "last_notif_vector", value: feature_vector },
-                      ["ml_settings"]
-                    );
-                    var prediction = idb_model.predict(
-                      tf.tensor2d(feature_vector, [1, feature_vector.length])
-                    );
-                    console.log("Model input:");
-                    console.log(feature_vector);
-                    console.log("Model output:");
-                    console.log(prediction.dataSync()[0]);
-                    if (isNaN(prediction.dataSync()[0])) {
-                      console.log("NaN exception, return!");
-                      return;
-                    }
-                    // if prediction is inopportune
-                    if (prediction.dataSync()[0] <= 0.5) {
-                      // IMPORTANT .5 or less is inopportune, otherwise opportune
-                      if (
-                        // and too long has passed without any notifications
-                        checkTime >=
-                        (gb_config.policy.cooldown / config.LESS) *
-                        config.ML_THRESHOLD
-                      ) {
-                        notify({
-                          id: id,
-                          type: pedometerInfo.stepStatus,
-                          content: message,
-                        });
-                        add(
-                          {
-                            eventKey: id,
-                            eventType: "ntf",
-                            eventOccuredAt: new Date().getTime(),
-                            eventData: { action: "RECEIVED" },
-                          },
-                          ["activity"]
-                        );
-                        update(
-                          {
-                            key: "NT",
-                            value: new Date().getTime(),
-                          },
-                          ["settings"]
-                        );
-                      }
-                    } else {
-                      // if prediction is opportune, beep
-                      notify({
-                        id: id,
-                        type: pedometerInfo.stepStatus,
-                        content: message,
-                      });
-                      add(
-                        {
-                          eventKey: id,
-                          eventType: "ntf",
-                          eventOccuredAt: new Date().getTime(),
-                          eventData: { action: "RECEIVED" },
-                        },
-                        ["activity"]
-                      );
-                      update(
-                        {
-                          key: "NT",
-                          value: new Date().getTime(),
-                        },
-                        ["settings"]
-                      );
-                    }
-                  });
-                });
-              } else {
-                console.log("not allowed to send notif (time)");
-              }
-            }
-          );
-        });
-      } else if (
-        checkTime > gb_config.policy.cooldown / config.LESS ||
-        first_run
-      ) {
-        // else : not ml
-        notify({
-          id: id,
-          type: pedometerInfo.stepStatus,
-          content: message,
-        });
-        add(
-          {
-            eventKey: id,
-            eventType: "ntf",
-            eventOccuredAt: new Date().getTime(),
-            eventData: { action: "RECEIVED" },
-          },
-          ["activity"]
-        );
-        update({ key: "NT", value: new Date().getTime() }, ["settings"]);
-      } else {
-        console.log("not allowed to send notif (time)");
-      }
-      tizen.humanactivitymonitor.unsetAccumulativePedometerListener();
-      console.log("unset monitor()");
-      setTimeout(function () {
-        monitor();
-      }, config.PEDOMETER_INTERVAL);
-    });
-  } else {
-    // important to not log instantly but rather every 1 minute
-    console.log("not allowed to send notif (activity)");
-    tizen.humanactivitymonitor.unsetAccumulativePedometerListener();
-    console.log("unset monitor()");
-    setTimeout(function () {
-      monitor();
-    }, config.PEDOMETER_INTERVAL);
-  }
+
+  // Removed notification logic
+  // Only recording pedometer data
+
+  tizen.humanactivitymonitor.unsetAccumulativePedometerListener();
+  console.log("unset monitor()");
+  setTimeout(function () {
+    monitor();
+  }, config.PEDOMETER_INTERVAL);
 }
+
 function monitor() {
   checkAlarm();
   console.log("monitor()");
