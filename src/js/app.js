@@ -1,7 +1,6 @@
 /*
  * Global variables
  */
-var message = "Please click on `open app` below first and then `Self-report`";
 var backTovalencePopup = false;
 var disablebBackButton = false;
 var gb_config;
@@ -977,25 +976,25 @@ function requestPermission(
 }
 function onChangedGPS(info) {
   console.log("in onChangedGPS()");
-  // the lat and long are 200 if there is no coverage; found this experimentally
+  // The lat and long are 200 if there is no coverage; found this experimentally
   var prev_lats = [];
   var prev_longs = [];
   for (var i = 0; i < info.gpsInfo.length; i++) {
     console.log(
       "Coordinates: " +
-        info.gpsInfo[i].latitude +
-        ", " +
-        info.gpsInfo[i].longitude
+      info.gpsInfo[i].latitude +
+      ", " +
+      info.gpsInfo[i].longitude
     );
     console.log(prev_lats);
     console.log(prev_longs);
     if (
-      // should compare lat, long as a tuple not as separate coordinates but works for now
+      // Should compare lat, long as a tuple not as separate coordinates but works for now
       prev_lats.includes(info.gpsInfo[i].latitude) &&
       prev_longs.includes(info.gpsInfo[i].longitude)
     ) {
       console.log("duplicate GPS reading, skipping");
-      continue; // on each change, a sequence of identical coordinates might exist, once one parsed, the rest of the same coordinates need to be skipped
+      continue; // On each change, a sequence of identical coordinates might exist, once one parsed, the rest of the same coordinates need to be skipped
     } else {
       prev_lats.push(info.gpsInfo[i].latitude);
       prev_longs.push(info.gpsInfo[i].longitude);
@@ -1056,7 +1055,7 @@ function onChangedGPS(info) {
       currentTime.getSeconds();
 
     var startTimeStr = gb_config.policy.start_time; // e.g., "06:59:59"
-    var endTimeStr = gb_config.policy.end_time;     // e.g., "21:59:59"
+    var endTimeStr = gb_config.policy.end_time; // e.g., "21:59:59"
 
     var startTimeParts = startTimeStr.split(":");
     var endTimeParts = endTimeStr.split(":");
@@ -1080,7 +1079,7 @@ function onChangedGPS(info) {
     if (assignedArm === 'Arm 1') {
       // Location-based arm logic
       if (gb_config.gps.hasOwnProperty("geofencing")) {
-        // geofencing, context-aware prompting
+        // Geofencing, context-aware prompting
         gb_config.gps.geofencing.forEach((geofencingElement) => {
           if (
             isWithinCircle(
@@ -1121,27 +1120,28 @@ function onChangedGPS(info) {
                 }
                 if (
                   new Date().getTime() - notifTimeGeo >
-                    geofencingElement.cooldown ||
+                  geofencingElement.cooldown ||
                   firstGpsRun
                 ) {
+                  var currentTimeMillis = new Date().getTime();
                   notify({
-                    id: new Date().getTime(),
+                    id: currentTimeMillis,
                     type: "geofencing",
                     content: message,
                   });
                   update(
                     {
                       key: notifKey,
-                      value: new Date().getTime(),
+                      value: currentTimeMillis,
                     },
                     ["settings"]
                   );
                   add(
                     {
-                      eventKey: new Date().getTime(),
+                      eventKey: currentTimeMillis,
                       eventType: "ntf",
-                      eventOccuredAt: new Date().getTime(),
-                      eventData: { action: "RECEIVED-GEO" },
+                      eventOccuredAt: currentTimeMillis,
+                      eventData: { action: message }, // Pass the message as the action
                     },
                     ["activity"]
                   );
@@ -1213,7 +1213,7 @@ function onChangedGPS(info) {
                 eventKey: currentTimeMillis,
                 eventType: "ntf",
                 eventOccuredAt: currentTimeMillis,
-                eventData: { action: "RECEIVED-RANDOM" },
+                eventData: { action: message }, // Pass the message as the action
               },
               ["activity"]
             );
@@ -1228,6 +1228,7 @@ function onChangedGPS(info) {
     }
   }
 }
+
 
 
 
