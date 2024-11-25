@@ -710,10 +710,10 @@ function getConfig() {
         $("#feedback").show();
         console.log("getConfig()::config received");
         gb_config = data;
-        if (config.DEBUG) {
-          // one might need to remove the example GPS
-          gb_config.gps = config.GPS_EXAMPLE.gps;
-        }
+        // if (config.DEBUG) {
+        //   // one might need to remove the example GPS
+        //   gb_config.gps = config.GPS_EXAMPLE.gps;
+        // }
         update({ key: "gb_config", value: JSON.stringify(data) }, ["settings"]);
         console.log(gb_config);
         //
@@ -781,10 +781,10 @@ function updateConfig() {
       success: function (data) {
         console.log("updateConfig()::config received");
         gb_config = data;
-        if (config.DEBUG) {
-          // one might need to remove the example GPS
-          gb_config.gps = config.GPS_EXAMPLE.gps;
-        }
+        // if (config.DEBUG) {
+        //   // one might need to remove the example GPS
+        //   gb_config.gps = config.GPS_EXAMPLE.gps;
+        // }
         update({ key: "gb_config", value: JSON.stringify(data) }, ["settings"]);
         console.log(gb_config);
       },

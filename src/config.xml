@@ -5,7 +5,7 @@
         <tizen:src name="index.html" reload="disable"/>
         <tizen:operation name="http://tizen.org/appcontrol/operation/gbFeedback"/>
     </tizen:app-control>
-    <tizen:application id="APP_ID.APP_NAME" package="APP_ID" required_version="5.5"/>
+    <tizen:application id="NDLfqWiZ8Z.ActivityListener" package="NDLfqWiZ8Z" required_version="5.5"/>
     <tizen:background-category value="sensor"/>
     <tizen:background-category value="background-network"/>
     <content src="index.html"/>
