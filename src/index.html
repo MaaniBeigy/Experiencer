@@ -22,7 +22,7 @@
 			<div id="ui-content"></div>
 			<p class="steps">ELBN 2024</p>
 			<p onclick="showLog()">v4.2.3</p>
-			<a class="ui-btn my-btn" href="#" id="feedback" onclick="checkAppControl()">
+			<a class="ui-btn my-btn" href="#submit-valence" id="feedback" onclick="checkAppControl()">
 				SELF-REPORT
 			</a>
 			<div class="ui-popup ui-popup-toast ui-popup-toast-graphic" id="done-popup-toast">
@@ -174,7 +174,7 @@
 				<div class="ui-popup-content">
 					<div class="question">Liked the content?</div>
 					<div>
-						<a class="ui-btn ggz-btn" data-rel="popup" href="#" id="submit-convenience">
+						<a class="ui-btn ggz-btn" data-rel="popup" href="#questionnaire" id="submit-convenience">
 							SUBMIT
 						</a>
 					</div>
@@ -187,6 +187,12 @@
 					<input class="ggz-slider" id="convenience-value" name="convenience-value" type="range" min="1" max="9"
 						value="5">
 				</div>
+			</div>
+			<div class="ui-popup" id="questionnaire">
+				<div class="ui-popup-content">
+					
+				</div>
+
 			</div>
 			<!-- toast errors -->
 			<div class="ui-popup ui-popup-toast" id="generic-error-popup-toast">

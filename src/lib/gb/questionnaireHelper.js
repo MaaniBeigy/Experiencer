@@ -30,7 +30,7 @@ function insertHTML(html, selector) {
 
 function prepareQuestions(questions, selector) {
   question_ids = [];
-  var html_template = `<div class="ui-popup" id="$id">
+  var html_template = `<div class="questionnaire" id="$id">
   <div class="ui-popup-content">
   <div class="question">$question</div>
   <ul class="pre-list">$items</div></div></div>`;

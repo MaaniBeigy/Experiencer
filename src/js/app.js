@@ -97,10 +97,15 @@ function getAssignedArm() {
 /*
  * prepare UI
  */
-var uiPrepared = false;
-
-function setupQuestionEventListeners(question_ids, item_selector) {
-  // First question
+function prepareUI() {
+  // prepare the UI of questionnaire
+  var question_ids = [];
+  var selector = "#questionnaire";
+  var item_selector = " > div > ul > li > a";
+  $(selector).empty();
+  var questions = parseJson(gb_config.questionnaire.questions); // TODO: fetch it from the config
+  question_ids = prepareQuestions(questions, selector);
+  // 0
   var firstPopUpToGetRead = document.getElementById("q-1");
   firstPopUpToGetRead.addEventListener("popupshow", function () {
     add(
@@ -113,10 +118,28 @@ function setupQuestionEventListeners(question_ids, item_selector) {
       ["activity"]
     );
   });
-
-  // Set up click handlers for each question
-  question_ids.forEach(function (question_id, index) {
-    $("#" + question_id + item_selector).click(function () {
+  $("#" + question_ids[0] + item_selector).click(function () {
+    var clickedVal = $(this).data("val");
+    var clickedGd = $(this).data("gd");
+    var clickedTk = $(this).data("tk");
+    add(
+      {
+        eventKey: new Date().getTime(),
+        eventType: "gb_activity",
+        eventOccuredAt: new Date().getTime(),
+        eventData: [
+          {
+            gd_tk: clickedGd,
+            properties: [{ propertyTK: clickedTk, value: clickedVal }],
+          },
+        ],
+      },
+      ["activity"]
+    );
+  });
+  // 1..n-2
+  for (let i = 1; i < question_ids.length - 1; i++) {
+    $("#" + question_ids[i] + item_selector).click(function () {
       var clickedVal = $(this).data("val");
       var clickedGd = $(this).data("gd");
       var clickedTk = $(this).data("tk");
@@ -134,119 +157,33 @@ function setupQuestionEventListeners(question_ids, item_selector) {
         },
         ["activity"]
       );
-
-      // If it's the last question, open the valence popup
-      if (index === question_ids.length - 1) {
-        tau.openPopup(valencePopup);
-      }
     });
-  });
+  }
+  //n-1
+  $("#" + question_ids[question_ids.length - 1] + item_selector).click(
+    function () {
+      var clickedVal = $(this).data("val");
+      var clickedGd = $(this).data("gd");
+      var clickedTk = $(this).data("tk");
+      add(
+        {
+          eventKey: new Date().getTime(),
+          eventType: "gb_activity",
+          eventOccuredAt: new Date().getTime(),
+          eventData: [
+            {
+              gd_tk: clickedGd,
+              properties: [{ propertyTK: clickedTk, value: clickedVal }],
+            },
+          ],
+        },
+        ["activity"]
+      );
+      toastSaving();
+      // $(document).trigger("feedbackEvent", { "emotion": emotion + 1, "intensity": intensity + 1 });
+    }
+  );
 }
-
-function prepareUI() {
-  if (uiPrepared) return; // UI is already prepared
-  uiPrepared = true;
-
-  // Prepare the UI of the questionnaire
-  var question_ids = [];
-  var selector = "#ui-content";
-  var item_selector = " > div > ul > li > a";
-  var questions = parseJson(gb_config.questionnaire.questions);
-  question_ids = prepareQuestions(questions, selector);
-
-  // Set up event listeners for the questions
-  setupQuestionEventListeners(question_ids, item_selector);
-}
-
-
-
-// function prepareUI() {
-//   // prepare the UI of questionnaire
-//   var question_ids = [];
-//   var selector = "#ui-content";
-//   var item_selector = " > div > ul > li > a";
-//   $(selector).empty();
-//   var questions = parseJson(gb_config.questionnaire.questions); // TODO: fetch it from the config
-//   question_ids = prepareQuestions(questions, selector);
-//   // 0
-//   var firstPopUpToGetRead = document.getElementById("q-1");
-//   firstPopUpToGetRead.addEventListener("popupshow", function () {
-//     add(
-//       {
-//         eventKey: Number($("#process-id").val()),
-//         eventType: "ntf",
-//         eventOccuredAt: new Date().getTime(),
-//         eventData: { action: "READ" },
-//       },
-//       ["activity"]
-//     );
-//   });
-//   $("#" + question_ids[0] + item_selector).click(function () {
-//     var clickedVal = $(this).data("val");
-//     var clickedGd = $(this).data("gd");
-//     var clickedTk = $(this).data("tk");
-//     add(
-//       {
-//         eventKey: new Date().getTime(),
-//         eventType: "gb_activity",
-//         eventOccuredAt: new Date().getTime(),
-//         eventData: [
-//           {
-//             gd_tk: clickedGd,
-//             properties: [{ propertyTK: clickedTk, value: clickedVal }],
-//           },
-//         ],
-//       },
-//       ["activity"]
-//     );
-//   });
-//   // 1..n-2
-//   for (let i = 1; i < question_ids.length - 1; i++) {
-//     $("#" + question_ids[i] + item_selector).click(function () {
-//       var clickedVal = $(this).data("val");
-//       var clickedGd = $(this).data("gd");
-//       var clickedTk = $(this).data("tk");
-//       add(
-//         {
-//           eventKey: new Date().getTime(),
-//           eventType: "gb_activity",
-//           eventOccuredAt: new Date().getTime(),
-//           eventData: [
-//             {
-//               gd_tk: clickedGd,
-//               properties: [{ propertyTK: clickedTk, value: clickedVal }],
-//             },
-//           ],
-//         },
-//         ["activity"]
-//       );
-//     });
-//   }
-//   //n-1
-//   $("#" + question_ids[question_ids.length - 1] + item_selector).click(
-//     function () {
-//       var clickedVal = $(this).data("val");
-//       var clickedGd = $(this).data("gd");
-//       var clickedTk = $(this).data("tk");
-//       add(
-//         {
-//           eventKey: new Date().getTime(),
-//           eventType: "gb_activity",
-//           eventOccuredAt: new Date().getTime(),
-//           eventData: [
-//             {
-//               gd_tk: clickedGd,
-//               properties: [{ propertyTK: clickedTk, value: clickedVal }],
-//             },
-//           ],
-//         },
-//         ["activity"]
-//       );
-//       toastSaving();
-//       // $(document).trigger("feedbackEvent", { "emotion": emotion + 1, "intensity": intensity + 1 });
-//     }
-//   );
-// }
 function toastDone() {
   var messages = [
     "You are the best",
@@ -367,13 +304,12 @@ conveniencePopup.addEventListener("popupshow", function () {
 
 $(document).on("popupEvent", { type: "UI" }, function (event, data) {
   $("#process-id").val(data);
-  prepareUI(); // new addition to create dynamic questionnaire
   tau.openPopup(preparingPopup);
   setTimeout(() => {
+    prepareUI();  // new addition to create dynamic questionnaire
     tau.closePopup(preparingPopup);
     tau.openPopup(valencePopup);
   }, 3000);
-  
   /*
    * ML check
    */
@@ -491,11 +427,11 @@ function showLog() {
   }
 }
 $(document).ready(function () {
-  // $.when(readOne("token", ["settings"])).done(function (data) {
-  // 	if (data == null) {
-  // 		$('#feedback').hide();
-  // 	}
-  // });
+  $.when(readOne("token", ["settings"])).done(function (data) {
+  	if (data == null) {
+  		$('#feedback').hide();
+  	}
+  });
 
   $("#valence-value").change(function () {
     $("#valence-value-heading").text($('#valence-value').val())
@@ -532,16 +468,6 @@ $(document).ready(function () {
   })
   $('#submit-convenience').click(function () {
     convenience = Number($('#convenience-value').val());
-    // Trigger the feedback event to save the data
-    $(document).trigger("feedbackEvent", {
-      valence: valence,
-      arousal: arousal,
-      stress: stress,
-      convenience: convenience,
-    });
-
-    // Show the saving toast
-    toastSaving();
   })
   $.when(readOne("token", ["settings"])).done(function (data) {
     if (data == null) {
@@ -1261,8 +1187,8 @@ function onChangedGPS(info) {
       prev_lats.push(info.gpsInfo[i].latitude);
       prev_longs.push(info.gpsInfo[i].longitude);
     }
-    // var assignedArm = getAssignedArm();
-    var assignedArm = 'Arm 1'
+    var assignedArm = getAssignedArm();
+    // var assignedArm = 'Arm 1' // Hardcoded for testing
     console.log("Assigned Arm:", assignedArm);
 
     // Add the 'ARM' property to the gb_activity event
@@ -1318,10 +1244,10 @@ function onChangedGPS(info) {
       currentTime.getMinutes() * 60 +
       currentTime.getSeconds();
 
-    // var startTimeStr = gb_config.policy.start_time; // e.g., "06:59:59"
-    // var endTimeStr = gb_config.policy.end_time; // e.g., "21:59:59"
-    var startTimeStr = "00:01:00"
-    var endTimeStr = "23:59:59"
+    var startTimeStr = gb_config.policy.start_time;
+    var endTimeStr = gb_config.policy.end_time;
+    // var startTimeStr = "00:01:00"  // Hardcoded for testing
+    // var endTimeStr = "23:59:59"  // Hardcoded for testing
     var startTimeParts = startTimeStr.split(":");
     var endTimeParts = endTimeStr.split(":");
 
@@ -1345,12 +1271,14 @@ function onChangedGPS(info) {
       // Location-based arm logic
       if (gb_config.gps.hasOwnProperty("geofencing")) {
         // Check if both latitude and longitude are 200
-        if (info.gpsInfo[i].latitude == 200 && info.gpsInfo[i].longitude == 200) {
-          var matchingGeofences = findGeofences(51.451276, 5.375725); // Eindhoven Airport - GreenSpace!:-))
-        } else {
-          // Find geofences the user is within
-          var matchingGeofences = findGeofences(info.gpsInfo[i].latitude, info.gpsInfo[i].longitude);
-        }
+        // for inside test purposes
+        // if (info.gpsInfo[i].latitude == 200 && info.gpsInfo[i].longitude == 200) {
+        //   var matchingGeofences = findGeofences(51.451276, 5.375725); // Eindhoven Airport - GreenSpace!:-))
+        // } else {
+        //   // Find geofences the user is within
+        //   var matchingGeofences = findGeofences(info.gpsInfo[i].latitude, info.gpsInfo[i].longitude);
+        // }
+        var matchingGeofences = findGeofences(info.gpsInfo[i].latitude, info.gpsInfo[i].longitude);
         if (matchingGeofences.length > 0) {
           matchingGeofences.forEach(function (geofencingElement) {
             var geofenceType = geofencingElement.type;
