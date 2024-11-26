@@ -25,6 +25,44 @@ var hrm_added = false;
 var ppg_added = false;
 var acc_added = false;
 /*
+ * Implement R-tree algorithm for finding users'geofence
+ */
+var rtree; // Declare RBush tree globally
+// Initialize RBush tree with geofences
+function initializeGeofenceTree() {
+  if (!gb_config.gps.hasOwnProperty("geofencing")) {
+    console.log("No geofences defined in configuration.");
+    return;
+  }
+  rtree = new RBush();
+  const geofenceEntries = gb_config.gps.geofencing.map((g) => ({
+    minX: g.long - g.r / 111320, // Approx meters to degrees longitude
+    minY: g.lat - g.r / 110540,  // Approx meters to degrees latitude
+    maxX: g.long + g.r / 111320,
+    maxY: g.lat + g.r / 110540,
+    data: g,
+  }));
+
+  rtree.load(geofenceEntries);
+}
+// Function to find geofences for a user's location
+function findGeofences(userLat, userLong) {
+  const range = 0.001; // Small buffer for bounding box in degrees
+  const nearby = rtree.search({
+    minX: userLong - range,
+    minY: userLat - range,
+    maxX: userLong + range,
+    maxY: userLat + range,
+  });
+  // Filter using haversine distance
+  return nearby
+    .map((item) => item.data)
+    .filter((geofence) =>
+      isWithinCircle(geofence.lat, geofence.long, userLat, userLong, geofence.r)
+    );
+}
+
+/*
  * Assign Intervention Arm Randomly and change the arm after 7 days
  */
 function getAssignedArm() {
@@ -59,15 +97,10 @@ function getAssignedArm() {
 /*
  * prepare UI
  */
-function prepareUI() {
-  // prepare the UI of questionnaire
-  var question_ids = [];
-  var selector = "#ui-content";
-  var item_selector = " > div > ul > li > a";
-  $(selector).empty();
-  var questions = parseJson(gb_config.questionnaire.questions); // TODO: fetch it from the config
-  question_ids = prepareQuestions(questions, selector);
-  // 0
+var uiPrepared = false;
+
+function setupQuestionEventListeners(question_ids, item_selector) {
+  // First question
   var firstPopUpToGetRead = document.getElementById("q-1");
   firstPopUpToGetRead.addEventListener("popupshow", function () {
     add(
@@ -80,28 +113,10 @@ function prepareUI() {
       ["activity"]
     );
   });
-  $("#" + question_ids[0] + item_selector).click(function () {
-    var clickedVal = $(this).data("val");
-    var clickedGd = $(this).data("gd");
-    var clickedTk = $(this).data("tk");
-    add(
-      {
-        eventKey: new Date().getTime(),
-        eventType: "gb_activity",
-        eventOccuredAt: new Date().getTime(),
-        eventData: [
-          {
-            gd_tk: clickedGd,
-            properties: [{ propertyTK: clickedTk, value: clickedVal }],
-          },
-        ],
-      },
-      ["activity"]
-    );
-  });
-  // 1..n-2
-  for (let i = 1; i < question_ids.length - 1; i++) {
-    $("#" + question_ids[i] + item_selector).click(function () {
+
+  // Set up click handlers for each question
+  question_ids.forEach(function (question_id, index) {
+    $("#" + question_id + item_selector).click(function () {
       var clickedVal = $(this).data("val");
       var clickedGd = $(this).data("gd");
       var clickedTk = $(this).data("tk");
@@ -119,33 +134,119 @@ function prepareUI() {
         },
         ["activity"]
       );
+
+      // If it's the last question, open the valence popup
+      if (index === question_ids.length - 1) {
+        tau.openPopup(valencePopup);
+      }
     });
-  }
-  //n-1
-  $("#" + question_ids[question_ids.length - 1] + item_selector).click(
-    function () {
-      var clickedVal = $(this).data("val");
-      var clickedGd = $(this).data("gd");
-      var clickedTk = $(this).data("tk");
-      add(
-        {
-          eventKey: new Date().getTime(),
-          eventType: "gb_activity",
-          eventOccuredAt: new Date().getTime(),
-          eventData: [
-            {
-              gd_tk: clickedGd,
-              properties: [{ propertyTK: clickedTk, value: clickedVal }],
-            },
-          ],
-        },
-        ["activity"]
-      );
-      toastSaving();
-      // $(document).trigger("feedbackEvent", { "emotion": emotion + 1, "intensity": intensity + 1 });
-    }
-  );
+  });
 }
+
+function prepareUI() {
+  if (uiPrepared) return; // UI is already prepared
+  uiPrepared = true;
+
+  // Prepare the UI of the questionnaire
+  var question_ids = [];
+  var selector = "#ui-content";
+  var item_selector = " > div > ul > li > a";
+  var questions = parseJson(gb_config.questionnaire.questions);
+  question_ids = prepareQuestions(questions, selector);
+
+  // Set up event listeners for the questions
+  setupQuestionEventListeners(question_ids, item_selector);
+}
+
+
+
+// function prepareUI() {
+//   // prepare the UI of questionnaire
+//   var question_ids = [];
+//   var selector = "#ui-content";
+//   var item_selector = " > div > ul > li > a";
+//   $(selector).empty();
+//   var questions = parseJson(gb_config.questionnaire.questions); // TODO: fetch it from the config
+//   question_ids = prepareQuestions(questions, selector);
+//   // 0
+//   var firstPopUpToGetRead = document.getElementById("q-1");
+//   firstPopUpToGetRead.addEventListener("popupshow", function () {
+//     add(
+//       {
+//         eventKey: Number($("#process-id").val()),
+//         eventType: "ntf",
+//         eventOccuredAt: new Date().getTime(),
+//         eventData: { action: "READ" },
+//       },
+//       ["activity"]
+//     );
+//   });
+//   $("#" + question_ids[0] + item_selector).click(function () {
+//     var clickedVal = $(this).data("val");
+//     var clickedGd = $(this).data("gd");
+//     var clickedTk = $(this).data("tk");
+//     add(
+//       {
+//         eventKey: new Date().getTime(),
+//         eventType: "gb_activity",
+//         eventOccuredAt: new Date().getTime(),
+//         eventData: [
+//           {
+//             gd_tk: clickedGd,
+//             properties: [{ propertyTK: clickedTk, value: clickedVal }],
+//           },
+//         ],
+//       },
+//       ["activity"]
+//     );
+//   });
+//   // 1..n-2
+//   for (let i = 1; i < question_ids.length - 1; i++) {
+//     $("#" + question_ids[i] + item_selector).click(function () {
+//       var clickedVal = $(this).data("val");
+//       var clickedGd = $(this).data("gd");
+//       var clickedTk = $(this).data("tk");
+//       add(
+//         {
+//           eventKey: new Date().getTime(),
+//           eventType: "gb_activity",
+//           eventOccuredAt: new Date().getTime(),
+//           eventData: [
+//             {
+//               gd_tk: clickedGd,
+//               properties: [{ propertyTK: clickedTk, value: clickedVal }],
+//             },
+//           ],
+//         },
+//         ["activity"]
+//       );
+//     });
+//   }
+//   //n-1
+//   $("#" + question_ids[question_ids.length - 1] + item_selector).click(
+//     function () {
+//       var clickedVal = $(this).data("val");
+//       var clickedGd = $(this).data("gd");
+//       var clickedTk = $(this).data("tk");
+//       add(
+//         {
+//           eventKey: new Date().getTime(),
+//           eventType: "gb_activity",
+//           eventOccuredAt: new Date().getTime(),
+//           eventData: [
+//             {
+//               gd_tk: clickedGd,
+//               properties: [{ propertyTK: clickedTk, value: clickedVal }],
+//             },
+//           ],
+//         },
+//         ["activity"]
+//       );
+//       toastSaving();
+//       // $(document).trigger("feedbackEvent", { "emotion": emotion + 1, "intensity": intensity + 1 });
+//     }
+//   );
+// }
 function toastDone() {
   var messages = [
     "You are the best",
@@ -266,12 +367,13 @@ conveniencePopup.addEventListener("popupshow", function () {
 
 $(document).on("popupEvent", { type: "UI" }, function (event, data) {
   $("#process-id").val(data);
+  prepareUI(); // new addition to create dynamic questionnaire
   tau.openPopup(preparingPopup);
   setTimeout(() => {
     tau.closePopup(preparingPopup);
     tau.openPopup(valencePopup);
   }, 3000);
-  prepareUI(); // new addition to create dynamic questionnaire
+  
   /*
    * ML check
    */
@@ -353,6 +455,161 @@ $(document).on("snoozeEvent", { type: "UI" }, function (event, data) {
     },
     ["activity"]
   );
+});
+
+var valence = -1;
+var arousal = -1;
+var stress = -1;
+var convenience = -1;
+var showCounter = 0;
+var logoutCounter = 0;
+var logoinCounter = 0;
+
+var valenceSliderElement = document.getElementById("valence-value"),
+  valenceSlider = tau.widget.Slider(valenceSliderElement);
+var arousalSliderElement = document.getElementById("arousal-value"),
+  arousalSlider = tau.widget.Slider(arousalSliderElement);
+var stressSliderElement = document.getElementById("stress-value"),
+  stressSlider = tau.widget.Slider(stressSliderElement);
+var convenienceSliderElement = document.getElementById("convenience-value"),
+  convenienceSlider = tau.widget.Slider(convenienceSliderElement);
+
+function showLogin() {
+  if (showCounter == 4) {
+    tau.openPopup($('#login-popup'));
+    showCounter = 0
+  } else {
+    showCounter++;
+  }
+}
+function showLog() {
+  if (showCounter == 4) {
+    tau.openPopup($('#log-popup'));
+    showCounter = 0
+  } else {
+    showCounter++;
+  }
+}
+$(document).ready(function () {
+  // $.when(readOne("token", ["settings"])).done(function (data) {
+  // 	if (data == null) {
+  // 		$('#feedback').hide();
+  // 	}
+  // });
+
+  $("#valence-value").change(function () {
+    $("#valence-value-heading").text($('#valence-value').val())
+    var v = Number($('#valence-value').val());
+    $('#valence-low-img').css('opacity', 1 - v / 10 + 0.1);
+    $('#valence-high-img').css('opacity', v / 10 + 0.1);
+  });
+  $("#arousal-value").change(function () {
+    $("#arousal-value-heading").text($('#arousal-value').val());
+    var a = Number($('#arousal-value').val());
+    $('#arousal-low-img').css('opacity', 1 - a / 10 + 0.1);
+    $('#arousal-high-img').css('opacity', a / 10 + 0.1);
+  });
+  $("#stress-value").change(function () {
+    $("#stress-value-heading").text($('#stress-value').val());
+    var w = Number($('#stress-value').val());
+    $('#stress-low-img').css('opacity', 1 - w / 10 + 0.1);
+    $('#stress-high-img').css('opacity', w / 10 + 0.1);
+  });
+  $("#convenience-value").change(function () {
+    $("#convenience-value-heading").text($('#convenience-value').val());
+    var w = Number($('#convenience-value').val());
+    $('#convenience-low-img').css('opacity', 1 - w / 10 + 0.1);
+    $('#convenience-high-img').css('opacity', w / 10 + 0.1);
+  });
+  $('#submit-valence').click(function () {
+    valence = Number($('#valence-value').val());
+  })
+  $('#submit-arousal').click(function () {
+    arousal = Number($('#arousal-value').val());
+  })
+  $('#submit-stress').click(function () {
+    stress = Number($('#stress-value').val());
+  })
+  $('#submit-convenience').click(function () {
+    convenience = Number($('#convenience-value').val());
+    // Trigger the feedback event to save the data
+    $(document).trigger("feedbackEvent", {
+      valence: valence,
+      arousal: arousal,
+      stress: stress,
+      convenience: convenience,
+    });
+
+    // Show the saving toast
+    toastSaving();
+  })
+  $.when(readOne("token", ["settings"])).done(function (data) {
+    if (data == null) {
+      $('#feedback').hide();
+    }
+  });
+
+  $.when(readOne("stepsview", ["settings"])).done(function (data) {
+    $("#steps").text(data == null ? 0 : data);
+  })
+  // hidden items
+  $('ul.log-list li a').click(function () {
+    log = $(this).text();
+    if (log == "steps_sum") {
+      $.when(readOne("DA", ["settings"])).done(function (da) {
+        var data = JSON.stringify(da);
+        $.when(readOne("DAW", ["settings"])).done(function (daw) {
+          data += JSON.stringify(daw);
+          $.when(readOne("DAR", ["settings"])).done(function (dar) {
+            data += JSON.stringify(dar);
+            $('#log-details').html("<p>" + (data == "null" ? "No Data" : data) + "</p>");
+            tau.openPopup($('#details-popup'));
+          })
+        })
+      })
+    } else if (log == "access_token") {
+      $.when(readOne("token", ["settings"])).done(function (tn) {
+        var data = tn;
+        $('#log-details').html("<p>" + (data == null ? "No Data" : data) + "</p>");
+        tau.openPopup($('#details-popup'));
+      })
+    } else if (log == "last_notif") {
+      $.when(readOne("NT", ["settings"])).done(function (nf) {
+        var data = nf;
+        $('#log-details').html("<p>" + (data == null ? "No Data" : new Date(parseInt(data)).toString()) + "</p>");
+        tau.openPopup($('#details-popup'));
+      })
+    } else if (log == "gb_config") {
+      $.when(readOne("gb_config", ["settings"])).done(function (cf) {
+        var data = JSON.stringify(cf);
+        $('#log-details').html("<p>" + (data == null ? "No Data" : data) + "</p>");
+        tau.openPopup($('#details-popup'));
+      })
+    } else if (log == "db_info") {
+      $('#log-details').html("<p>Loading...</p>");
+      readAll(["activity"]).then(function (data) {
+        var html = "No Data";
+        if (data.length > 0) {
+          html = "<p>#records:" + data.length + "<br/>" + JSON.stringify(data) + "</p>";
+        }
+        $('#log-details').html(html);
+      });
+      tau.openPopup($('#details-popup'));
+    } else if (log == "next_alarm") {
+      $.when(readOne("alarm", ["settings"])).done(function (am) {
+        var data = am;
+        $('#log-details').html("<p>" + (data == null ? "No Data" : tizen.alarm.get(parseInt(data)).getRemainingSeconds() + "(s) remaining") + "</p>");
+        tau.openPopup($('#details-popup'));
+      })
+    } else if (log == "log_out") {
+      if (logoutCounter == 4) {
+        logoutCounter = 0
+        logout();
+      } else {
+        logoutCounter++;
+      }
+    }
+  });
 });
 /*
  * Push server callbacks
@@ -976,6 +1233,11 @@ function requestPermission(
 }
 function onChangedGPS(info) {
   console.log("in onChangedGPS()");
+
+  // Initialize geofence tree if not already initialized
+  if (!rtree) {
+    initializeGeofenceTree();
+  }
   // The lat and long are 200 if there is no coverage; found this experimentally
   var prev_lats = [];
   var prev_longs = [];
@@ -999,15 +1261,17 @@ function onChangedGPS(info) {
       prev_lats.push(info.gpsInfo[i].latitude);
       prev_longs.push(info.gpsInfo[i].longitude);
     }
-    var assignedArm = getAssignedArm();
+    // var assignedArm = getAssignedArm();
+    var assignedArm = 'Arm 1'
     console.log("Assigned Arm:", assignedArm);
 
     // Add the 'ARM' property to the gb_activity event
+    var eventTimestamp = new Date().getTime();
     add(
       {
-        eventKey: new Date().getTime(),
+        eventKey: eventTimestamp,
         eventType: "gb_activity",
-        eventOccuredAt: new Date().getTime(),
+        eventOccuredAt: eventTimestamp,
         eventData: [
           {
             gd_tk: gb_config.gps.gd_tk,
@@ -1054,9 +1318,10 @@ function onChangedGPS(info) {
       currentTime.getMinutes() * 60 +
       currentTime.getSeconds();
 
-    var startTimeStr = gb_config.policy.start_time; // e.g., "06:59:59"
-    var endTimeStr = gb_config.policy.end_time; // e.g., "21:59:59"
-
+    // var startTimeStr = gb_config.policy.start_time; // e.g., "06:59:59"
+    // var endTimeStr = gb_config.policy.end_time; // e.g., "21:59:59"
+    var startTimeStr = "00:01:00"
+    var endTimeStr = "23:59:59"
     var startTimeParts = startTimeStr.split(":");
     var endTimeParts = endTimeStr.split(":");
 
@@ -1079,22 +1344,22 @@ function onChangedGPS(info) {
     if (assignedArm === 'Arm 1') {
       // Location-based arm logic
       if (gb_config.gps.hasOwnProperty("geofencing")) {
-        // Geofencing, context-aware prompting
-        gb_config.gps.geofencing.forEach((geofencingElement) => {
-          if (
-            isWithinCircle(
-              geofencingElement.lat,
-              geofencingElement.long,
-              info.gpsInfo[i].latitude,
-              info.gpsInfo[i].longitude,
-              geofencingElement.r
-            )
-          ) {
+        // Check if both latitude and longitude are 200
+        if (info.gpsInfo[i].latitude == 200 && info.gpsInfo[i].longitude == 200) {
+          var matchingGeofences = findGeofences(51.451276, 5.375725); // Eindhoven Airport - GreenSpace!:-))
+        } else {
+          // Find geofences the user is within
+          var matchingGeofences = findGeofences(info.gpsInfo[i].latitude, info.gpsInfo[i].longitude);
+        }
+        if (matchingGeofences.length > 0) {
+          matchingGeofences.forEach(function (geofencingElement) {
             var geofenceType = geofencingElement.type;
+
             // Find the messages for this geofence type
             var messagesForType = gb_config.gps.messages.find(function (item) {
               return item.geofence_type === geofenceType;
             });
+
             if (messagesForType) {
               // Randomly select a nudge_type
               var nudges = messagesForType.nudges;
@@ -1113,7 +1378,7 @@ function onChangedGPS(info) {
                 var notifTimeGeo;
                 var firstGpsRun = false;
                 if (data == null) {
-                  notifTimeGeo = new Date().getTime();
+                  notifTimeGeo = 0;
                   firstGpsRun = true;
                 } else {
                   notifTimeGeo = parseInt(data);
@@ -1153,10 +1418,10 @@ function onChangedGPS(info) {
             } else {
               console.log("No messages found for geofence type:", geofenceType);
             }
-          } else {
-            console.log("outside radius");
-          }
-        });
+          });
+        } else {
+          console.log("User is not within any geofences.");
+        }
       }
     } else if (assignedArm === 'Arm 2') {
       // Random arm logic with first_run handling
@@ -1171,7 +1436,6 @@ function onChangedGPS(info) {
         if (data == null) {
           firstRun = true;
           lastNotifTime = 0; // Set to 0 to ensure checkTime is large
-          update({ key: lastNotifTimeKey, value: currentTimeMillis }, ["settings"]);
         } else {
           firstRun = false;
           lastNotifTime = parseInt(data);
@@ -1228,9 +1492,6 @@ function onChangedGPS(info) {
     }
   }
 }
-
-
-
 
 function onErrorGPS(error) {
   console.log("GPS :" + error.name + " " + error.message);
