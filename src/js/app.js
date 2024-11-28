@@ -275,7 +275,7 @@ preparingPopup.addEventListener("popupbeforeshow", function () {
 arousalPopup.addEventListener("popupbeforeshow", function () {
   arousalSlider.value(arousal == -1 ? "5" : String(arousal));
   console.log("`popupbeforeshow` fired");
-  backTovalencePopup = true;
+  backTovalencePopup = false;
 });
 arousalPopup.addEventListener("popupshow", function () {
   console.log("`popupshow` fired");
@@ -284,7 +284,7 @@ arousalPopup.addEventListener("popupshow", function () {
 stressPopup.addEventListener("popupbeforeshow", function () {
   stressSlider.value(stress == -1 ? "5" : String(stress));
   console.log("`popupbeforeshow` fired");
-  backTovalencePopup = true;
+  backTovalencePopup = false;
 });
 stressPopup.addEventListener("popupshow", function () {
   console.log("`popupshow` fired");
@@ -293,7 +293,7 @@ stressPopup.addEventListener("popupshow", function () {
 conveniencePopup.addEventListener("popupbeforeshow", function () {
   convenienceSlider.value(convenience == -1 ? "5" : String(convenience));
   console.log("`popupbeforeshow` fired");
-  backTovalencePopup = true;
+  backTovalencePopup = false;
 });
 conveniencePopup.addEventListener("popupshow", function () {
   console.log("`popupshow` fired");
@@ -309,50 +309,7 @@ $(document).on("popupEvent", { type: "UI" }, function (event, data) {
     prepareUI();  // new addition to create dynamic questionnaire
     tau.closePopup(preparingPopup);
     tau.openPopup(valencePopup);
-  }, 3000);
-  /*
-   * ML check
-   */
-  if (gb_config.policy.method.toUpperCase() == "ML") {
-    $.when(readOne("NT", ["settings"])).done(function (NT) {
-      $.when(readOne("NT_assessed", ["ml_settings"])).done(function (
-        NT_assessed
-      ) {
-        if (NT == NT_assessed) {
-          console.log("notif already assessed");
-          // notification is assessed, the current moment is opportune
-          retrainSaveTensor("last_pa_vector", 1);
-        } else {
-          console.log("notif is being assessed");
-          // notification is not yet assessed
-          // assess the convenience of the notification
-          $.when(assessLastNotification()).done((label) => {
-            console.log("notification assessment is: " + label);
-            if (label != null) {
-              update({ key: "last_notif_reaction", value: label }, [
-                // store the reaction
-                "ml_settings",
-              ]);
-              console.log("label: ", label);
-              if (label == 0) {
-                retrainSaveTensor("last_notif_vector", 0, function () {
-                  // if label is zero the moment of response is opportune and should be considered
-                  retrainSaveTensor("last_pa_vector", 1);
-                });
-              } else {
-                retrainSaveTensor("last_notif_vector", 1);
-              }
-            }
-          });
-        }
-      });
-    });
-  }
-  tau.openPopup(preparingPopup);
-  setTimeout(() => {
-    tau.closePopup(preparingPopup);
-    tau.openPopup($("#q-1")); // open the first question in the set of questionnaires
-  }, 7000);
+  }, 2000);
 });
 $(document).on("popupInfoEvent", { type: "UI" }, function (event, data) {
   tau.openPopup(infoToast);
@@ -474,7 +431,9 @@ $(document).ready(function () {
     arousal = -1;
     stress = -1;
     convenience = -1;
-
+    setTimeout(() => {
+      tau.openPopup($("#q-1")); // open the first question in the set of questionnaires
+    }, 1000);
   })
   $.when(readOne("token", ["settings"])).done(function (data) {
     if (data == null) {
