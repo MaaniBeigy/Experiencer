@@ -428,9 +428,9 @@ function showLog() {
 }
 $(document).ready(function () {
   $.when(readOne("token", ["settings"])).done(function (data) {
-  	if (data == null) {
-  		$('#feedback').hide();
-  	}
+    if (data == null) {
+      $('#feedback').hide();
+    }
   });
 
   $("#valence-value").change(function () {
@@ -468,6 +468,13 @@ $(document).ready(function () {
   })
   $('#submit-convenience').click(function () {
     convenience = Number($('#convenience-value').val());
+    console.log(`feedback submitted with ${JSON.stringify({ "valence": valence, "arousal": arousal, "stress": stress, "convenience": convenience })}`);
+    $(document).trigger("feedbackEvent", { "valence": valence, "arousal": arousal, "stress": stress, "convenience": convenience });
+    valence = -1;
+    arousal = -1;
+    stress = -1;
+    convenience = -1;
+
   })
   $.when(readOne("token", ["settings"])).done(function (data) {
     if (data == null) {
@@ -1188,7 +1195,7 @@ function onChangedGPS(info) {
       prev_longs.push(info.gpsInfo[i].longitude);
     }
     var assignedArm = getAssignedArm();
-    // var assignedArm = 'Arm 1' // Hardcoded for testing
+    // var assignedArm = 'Arm 1'  // Hardcoded for testing
     console.log("Assigned Arm:", assignedArm);
 
     // Add the 'ARM' property to the gb_activity event
@@ -1271,7 +1278,7 @@ function onChangedGPS(info) {
       // Location-based arm logic
       if (gb_config.gps.hasOwnProperty("geofencing")) {
         // Check if both latitude and longitude are 200
-        // for inside test purposes
+        // for inside testing
         // if (info.gpsInfo[i].latitude == 200 && info.gpsInfo[i].longitude == 200) {
         //   var matchingGeofences = findGeofences(51.451276, 5.375725); // Eindhoven Airport - GreenSpace!:-))
         // } else {

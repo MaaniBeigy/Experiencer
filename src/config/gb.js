@@ -7,7 +7,7 @@ var config = {
   SENSOR_RECORDING: 60000, // was 120000, changed for battery test
   ALARM_PERIOD: 30,
   PPG_INTERVAL: 10,
-  ACC_INTERVAL: 10,
+  ACC_INTERVAL: 100,
   PEDOMETER_INTERVAL: 60000,
   TIZEN_PUSH: false,
   OVERRIDE_LOGGING: false,
@@ -18,5 +18,5 @@ var config = {
   ML_THRESHOLD: 2,
   LESS: 1, // TODO: change to 1 for production and to anything else positive for testing
   OPPORTUNE_WINDOW: 60000, // if notification is reacted to within 1 minute
-  DEBUG: true,
+  DEBUG: false,
 };

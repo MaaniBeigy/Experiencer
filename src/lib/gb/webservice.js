@@ -12,8 +12,8 @@ function onWifiData(wifiData) {
   console.log("webservice: cancelled wifi opertation");
   console.log(
     "webservice::Checking previous ajax batch: " +
-      ajaxCalls.length +
-      " left in batch"
+    ajaxCalls.length +
+    " left in batch"
   );
   if (ajaxCalls.length > 0) {
     console.log("webservice::Aborting new batch creation");
@@ -91,7 +91,7 @@ function onWifiData(wifiData) {
                 });
                 console.log(
                   "webservice::Added to ajax batch. items in batch: " +
-                    ajaxCalls.length
+                  ajaxCalls.length
                 );
                 return;
               } else if (value.eventType === "gb_activity") {
@@ -100,14 +100,14 @@ function onWifiData(wifiData) {
                   fd.append(
                     "activity",
                     '{"gameDescriptorTK":"' +
-                      activitytData[i].gd_tk +
-                      '","dataProvider":' +
-                      gb_config.activities.tizen.dataProvider +
-                      ',"date":' +
-                      value.eventOccuredAt +
-                      ',"propertyInstances":' +
-                      JSON.stringify(activitytData[i].properties) +
-                      ',"players":[]}'
+                    activitytData[i].gd_tk +
+                    '","dataProvider":' +
+                    gb_config.activities.tizen.dataProvider +
+                    ',"date":' +
+                    value.eventOccuredAt +
+                    ',"propertyInstances":' +
+                    JSON.stringify(activitytData[i].properties) +
+                    ',"players":[]}'
                   );
                 }
               } else {
@@ -119,58 +119,95 @@ function onWifiData(wifiData) {
                 fd.append(
                   "activity",
                   '{"gameDescriptor":' +
-                    gameDescriptor +
-                    ',"dataProvider":' +
-                    dataProvider +
-                    ',"date":' +
-                    value.eventOccuredAt +
-                    ',"propertyInstances":[{"property":' +
-                    property +
-                    ',"value":"' +
-                    JSON.stringify(value.eventData).replace(/"/g, "'") +
-                    '"}],"players":[]}'
+                  gameDescriptor +
+                  ',"dataProvider":' +
+                  dataProvider +
+                  ',"date":' +
+                  value.eventOccuredAt +
+                  ',"propertyInstances":[{"property":' +
+                  property +
+                  ',"value":"' +
+                  JSON.stringify(value.eventData).replace(/"/g, "'") +
+                  '"}],"players":[]}'
                 );
               } else {
                 if (properties.hasOwnProperty("action")) {
                   fd.append(
                     "activity",
                     '{"gameDescriptor":' +
-                      gameDescriptor +
-                      ',"dataProvider":' +
-                      dataProvider +
-                      ',"date":' +
-                      value.eventOccuredAt +
-                      ',"propertyInstances":[{"property":' +
-                      properties.action.id +
-                      ',"value":"' +
-                      value.eventData.action +
-                      '"},{"property":' +
-                      properties.notification_ts.id +
-                      ',"value":' +
-                      value.eventOccuredAt +
-                      '}],"players":[]}'
+                    gameDescriptor +
+                    ',"dataProvider":' +
+                    dataProvider +
+                    ',"date":' +
+                    value.eventOccuredAt +
+                    ',"propertyInstances":[{"property":' +
+                    properties.action.id +
+                    ',"value":"' +
+                    value.eventData.action +
+                    '"},{"property":' +
+                    properties.notification_ts.id +
+                    ',"value":' +
+                    value.eventOccuredAt +
+                    '}],"players":[]}'
                   );
-                } else if (properties.hasOwnProperty("state_key")) {
+                } else if (properties.hasOwnProperty("valence_value")) {
                   fd.append(
                     "activity",
                     '{"gameDescriptor":' +
-                      gameDescriptor +
-                      ',"dataProvider":' +
-                      dataProvider +
-                      ',"date":' +
-                      value.eventOccuredAt +
-                      ',"propertyInstances":[{"property":' +
-                      properties.state_key.id +
-                      ',"value":"' +
-                      value.eventData.emotion +
-                      '"},{"property":' +
-                      properties.state_value.id +
-                      ',"value":"' +
-                      value.eventData.intensity +
-                      '"},{"property":' +
-                      properties.feedback_ts.id +
-                      ',"value":' +
-                      value.eventOccuredAt +
+                    gameDescriptor +
+                    ',"dataProvider":' +
+                    dataProvider +
+                    ',"date":' +
+                    new Date().getTime() +
+                    ',"propertyInstances":[{"property":' +
+                    properties.valence_value.id +
+                    ',"value":"' +
+                    value.eventData.valence +
+                    '"},{"property":' +
+                    properties.arousal_value.id +
+                    ',"value":"' +
+                    value.eventData.arousal +
+                    '"},{"property":' +
+                    properties.stress_value.id +
+                    ',"value":"' +
+                    value.eventData.stress +
+                    '"},{"property":' +
+                    properties.convenience_value.id +
+                    ',"value":"' +
+                    value.eventData.convenience +
+                    '"},{"property":' +
+                    properties.feedback_ts.id +
+                    ',"value":' +
+                    value.eventOccuredAt +
+                      '}],"players":[]}'
+                  );
+                  console.log(
+                    '{"gameDescriptor":' +
+                    gameDescriptor +
+                    ',"dataProvider":' +
+                    dataProvider +
+                    ',"date":' +
+                    new Date().getTime() +
+                    ',"propertyInstances":[{"property":' +
+                    properties.valence_value.id +
+                    ',"value":"' +
+                    value.eventData.valence +
+                    '"},{"property":' +
+                    properties.arousal_value.id +
+                    ',"value":"' +
+                    value.eventData.arousal +
+                    '"},{"property":' +
+                    properties.stress_value.id +
+                    ',"value":"' +
+                    value.eventData.stress +
+                    '"},{"property":' +
+                    properties.convenience_value.id +
+                    ',"value":"' +
+                    value.eventData.convenience +
+                    '"},{"property":' +
+                    properties.feedback_ts.id +
+                    ',"value":' +
+                    value.eventOccuredAt +
                       '}],"players":[]}'
                   );
                 } else {
@@ -207,14 +244,14 @@ function onWifiData(wifiData) {
               });
               console.log(
                 "webservice::Added to ajax batch. items in batch: " +
-                  ajaxCalls.length
+                ajaxCalls.length
               );
             });
             // call first of many ajax calls
             console.log(
               "webservice::starting to call " +
-                ajaxCalls.length +
-                " ajax requests"
+              ajaxCalls.length +
+              " ajax requests"
             );
             runAjax();
           })
@@ -249,24 +286,24 @@ function postSteps(startDate, endDate, steps, callBack, index, type) {
     fd.append(
       "activity",
       '{"gameDescriptor":' +
-        gd +
-        ',"dataProvider":' +
-        gb_config.activities.aggregate.dataProvider +
-        ',"date":' +
-        new Date().getTime() +
-        ',"propertyInstances":[{"property":' +
-        gb_config.activities.aggregate.properties.start_date.id +
-        ',"value":"' +
-        startDate +
-        '"},{"property":' +
-        gb_config.activities.aggregate.properties.end_date.id +
-        ',"value":"' +
-        endDate +
-        '"},{"property":' +
-        gb_config.activities.aggregate.properties.steps_sum.id +
-        ',"value":"' +
-        steps +
-        '"}],"players":[]}'
+      gd +
+      ',"dataProvider":' +
+      gb_config.activities.aggregate.dataProvider +
+      ',"date":' +
+      new Date().getTime() +
+      ',"propertyInstances":[{"property":' +
+      gb_config.activities.aggregate.properties.start_date.id +
+      ',"value":"' +
+      startDate +
+      '"},{"property":' +
+      gb_config.activities.aggregate.properties.end_date.id +
+      ',"value":"' +
+      endDate +
+      '"},{"property":' +
+      gb_config.activities.aggregate.properties.steps_sum.id +
+      ',"value":"' +
+      steps +
+      '"}],"players":[]}'
     );
     var call = {
       url: config.BASE_URL + config.ACITIVTY_ENDPOINT,
